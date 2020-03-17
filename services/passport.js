@@ -24,19 +24,20 @@ passport.use(new GoogleStrategy({
         clientSecret: keys.googleClientSecret,
         callbackURL: '/auth/google/callback',
         proxy: true
+            //trust the proxy, calculate the callback URL correctly
     },
-    (accessToken, refreshToken, profile, done) => {
+    async(accessToken, refreshToken, profile, done) => {
         // console.log('access token', accessToken);
         // console.log('refresh token', refreshToken);
         // console.log('profile', profile);
-        User.findOne({ googleId: profile.id }).then((existingUser) => {
-            if (existingUser) {
-                //we already have a record with the given profile ID
-                done(null, existingUser);
-                //null-no error
-            } else {
-                new User({ googleId: profile.id }).save()
-                    .then(user => done(null, user));
-            }
-        })
+        const existingUser = await User.findOne({ googleId: profile.id })
+        if (existingUser) {
+            //we already have a record with the given profile ID
+            return done(null, existingUser);
+            //null-no error
+        }
+
+        const user = await new User({ googleId: profile.id }).save()
+        done(null, user);
+
     }));
